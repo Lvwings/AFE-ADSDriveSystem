@@ -35,6 +35,7 @@ module AFE_ADS_TOP(
     output AFE_ENTRI,	//High on this pin enables tri-state of analog output drivers after shift out of data for all 64 channels 
 	input  AFE_STO,
 	input  AFE_EOC,
+	output AFE_STI,
 	//-- mode ports --
 	output AFE_SMT_MD,	// read mode set
 	output AFE_INPUTZ,

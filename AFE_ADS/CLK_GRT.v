@@ -41,16 +41,16 @@ IBUFG rst_IBUFG
 .I(sys_rst_n),               //FPGA引脚输入复位信号
 .O(sys_rst_r)
 );
-
+/*
 BUFG clk_IBUFG
 (
 .I(sys_clk),
 .O(clk_clk)
-);
+);*/
 //---------------------------------------
   INTER_CLK_GTR INTER_CLK_GTR
    (// Clock in ports
-    .SYS_CLK		(clk_clk),      // IN
+    .SYS_CLK		(sys_clk),      // IN
     // Clock out ports
     .CLK_ADS		(clk_ads_r),    // OUT
     .CLK_100M		(clk_100m_r),   // OUT
