@@ -1,5 +1,6 @@
 # PinCorrespondence
-this file indicates the pin correspondence between FPGA and board.
+this file indicates the pin correspondence between FPGA and board.  
+
 | Interface pin number | board pin name | FPGA signal name | FPGA port | Interface pin number | board pin name | FPGA signal name | FPGA port |
 | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- |
 |  1   |   ADC_SDOA  |   ADS_SDOA  |  C26   |  16   |  STO   |   AFE_STO  |   U25  |
