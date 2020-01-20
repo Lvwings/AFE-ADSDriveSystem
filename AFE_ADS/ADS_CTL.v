@@ -83,7 +83,7 @@ parameter	CMD_SRESET	=	16'h0004,	// 软复位
 			CMD_REFV1	=	16'h0002,	// 参考电压1
 			CMD_REFV2	=	16'h0005,	// 参考电压2
 			CMD_REFDAC	=	16'h07FF,	//	2.5v 参考电压
-			CMD_INIT	=	16'h4010,
+			CMD_INIT	=	16'h4000,	// 通道+AD片	4010  内部计数器
 			CMD_NORM	=	16'h0000;	// 0000 通道+AD片  0010 内部计数器
 reg [15:0]	sdi_cmd		=	0,
 			sdi_cmdr	=	0;
@@ -296,7 +296,7 @@ always @(posedge CLK_ADS or posedge CLK_RST) begin
 				case (clk_cnt)
 					8'd00 : begin o_sdi <= 0;sdi_cmdr <= sdi_cmd; end
 					8'd01,8'd02,8'd03,8'd04,8'd05,8'd06,8'd07,8'd08,
-					8'd09,8'd10,8'd11,8'd12,8'd13,8'd14,8'd15: 
+					8'd09,8'd10,8'd11,8'd12,8'd13,8'd14,8'd15,8'd16: 
 							begin o_sdi <= sdi_cmdr[15]; sdi_cmdr <= sdi_cmdr << 1; end
 					default:begin o_sdi <= 0;end
 				endcase
