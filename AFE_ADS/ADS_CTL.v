@@ -22,8 +22,10 @@ module ADS_CTL(
 //--- GLOBAL ---
     input CLK_RST,		//reset input, high is valid
     input CLK_ADS,		//system clock
-	input CLK_AFE,
 	input CLK_100M,
+//--- AFE PORTS ---	
+	input  AFE_EOC,
+	input  CLK_AFE,	
 //--- ADS PORTS ---
 	output ADS_CLK,
 	output ADS_CS_N,
@@ -41,19 +43,22 @@ module ADS_CTL(
 	output		  ADS_BVLAID,	// high valid
 	output ADS_INIT_OK
     );
-//---output registers---
-reg	o_clk	=	1'b0,
+	
+
+//---output registers------------------------------------------------------
+(* KEEP = "TRUE" *)reg	o_clk	=	1'b0,
 	o_csn	=	1'b1,
 	o_rd	=	1'b0,
 	o_sdi	=	1'b0,
 	o_init	=	1'b0,	// initial success flag ： high valid
 	o_convst=	1'b0;
 	
-reg [15:0]	o_sdoa	=	0,
-			o_sdob	=	0;
-reg			o_sdoa_valid	=	0,
-			o_sdob_valid	=	0;	
+(* KEEP = "TRUE" *) reg [15:0]	o_sdoa	=	0,
+								o_sdob	=	0;
+(* KEEP = "TRUE" *) reg			o_sdoa_valid	=	0,
+								o_sdob_valid	=	0;	
 reg [1:0]   o_m	=	2'b00;	// full-differential full-channel
+
 //--output assignment---
 assign	ADS_CLK		=	CLK_ADS;
 assign	ADS_CS_N	=	o_csn;
@@ -69,21 +74,21 @@ assign	ADS_BVLAID	=	o_sdob_valid;
 //---state parameters---
 parameter	IDLE		=	4'd0,
 			CMDS		=	4'd1,
-			SDIO		=	4'd2;			
+			SDIO		=	4'd2;
 reg [3:0]	current_state = 0,
 			next_state	=	0;	
 //---time parameters---
-parameter	T_RD		=	8'd4,		// 	50 ns
+parameter	T_RD		=	8'd20,		// 	< 50 ns  // 4
 			T_CS		=	8'd20;		// 	20 CLK_ADS
 reg [7:0] time_cnt		=	0,
 		  clk_cnt		=	0,
 		  afe_cnt		=	0;
 //---sdi cmd registers---
-parameter	CMD_SRESET	=	16'h0004,	// 软复位
-			CMD_REFV1	=	16'h0002,	// 参考电压1
-			CMD_REFV2	=	16'h0005,	// 参考电压2
-			CMD_REFDAC	=	16'h07FF,	//	2.5v 参考电压
-			CMD_INIT	=	16'h4000,	// 通道+AD片	4010  内部计数器
+parameter	CMD_SRESET	=	16'h1004,	// 软复位
+			CMD_REFV1	=	16'h1002,	// 参考电压1
+			CMD_REFV2	=	16'h1005,	 // 参考电压2
+			CMD_REFDAC	=	16'h03FF,	//	2.5v 参考电压
+			CMD_INIT	=	16'h1000,	// 通道+AD片	4020  内部计数器
 			CMD_NORM	=	16'h0000;	// 0000 通道+AD片  0010 内部计数器
 reg [15:0]	sdi_cmd		=	0,
 			sdi_cmdr	=	0;
@@ -107,8 +112,8 @@ reg	CLK_AFE_D	=	1'b0,
 	o_csn_d		=	1'b0,
 	sjump		=	1'b0,	// state jump flag
 	sdi_over	=	1'b0;	// sdi transfer over flag
-
-//---state jump---
+						
+//---state jump----------------------------------------------------------
 always @(posedge CLK_100M or posedge CLK_RST) begin
 	if (CLK_RST)
 		current_state <= IDLE;
@@ -122,18 +127,11 @@ always @(posedge CLK_100M or posedge CLK_RST) begin
 		o_convst	<=	1'b0;
 		time_cnt	<=	0;
 		sdi_over	<=	0;
-		o_sdoa_valid<=	0;
-		o_sdoa 		<=  0;
-		o_sdob_valid<=	0;
-		o_sdob 		<=  0;
-		sdoa		<=	0;
-		sdob		<=	0;
-		sdoa_cnt	<=	0;
-		sdob_cnt	<= 	0;		
 	end
 	else begin
+		
 		CLK_AFE_D	<=	CLK_AFE;
-		if (afe_cnt < 33) begin
+		if (afe_cnt < 34) begin
 			if (!CLK_AFE_D && CLK_AFE)
 				afe_cnt <= afe_cnt + 1;
 			else
@@ -150,15 +148,7 @@ always @(posedge CLK_100M or posedge CLK_RST) begin
 				o_rd		<=	1'b0;
 				o_convst	<=	1'b0;
 				time_cnt	<=	0;
-				sdi_over	<=	0;
-				o_sdoa_valid<=	o_sdoa_valid;
-				o_sdoa 		<=  o_sdoa 		;
-				o_sdob_valid<=	o_sdob_valid;
-				o_sdob 		<=  o_sdob 		;
-				sdoa		<=	0;
-				sdob		<=	0;
-				sdoa_cnt	<=	sdoa_cnt;
-				sdob_cnt	<= 	sdob_cnt;					
+				sdi_over	<=	0;				
 			end
 			//---ST1---
 			CMDS : begin
@@ -181,7 +171,7 @@ always @(posedge CLK_100M or posedge CLK_RST) begin
 					default  : begin sdi_cmd <= 0; end				
 				endcase
 			end
-			//---ST2---
+		//---ST2---
 			SDIO : begin
 
 				// ADS_CONVST ADS_RD
@@ -201,75 +191,88 @@ always @(posedge CLK_100M or posedge CLK_RST) begin
 					o_convst <= 0;
 					o_rd	 <= 0;	
 				end
-				// ADS_SDOA ADS_SDOB
-				if (o_init && CLK_ADS_D && !CLK_ADS && clk_cnt >= 2 && clk_cnt <= 19)	begin// CLK_ADS 下降沿读数据
-					sdoa <= {sdoa[16:0],ADS_SDOA};
-					sdob <= {sdob[16:0],ADS_SDOB};
-				end
-				else begin
-					sdoa <= sdoa;
-					sdob <= sdob;
-					if (clk_cnt == 0) begin
-						sdoa_cnt <= sdoa[17:16];
-						sdob_cnt <= sdob[17:16];
-					end
-					else begin
-						sdoa_cnt <= sdoa_cnt;
-						sdob_cnt <= sdob_cnt;
-					end
-				end
-					// data verify ：[17:16]是内部计数器 或者 通道+AD片 验证数据是否有效
-				if (o_init && clk_cnt == 20) begin	
-					//if ((sdoa_cnt != sdoa[17:16]) && (afe_cnt < 32)) begin	// 内部计数器
-					if ((sdoa[17:16]) == 2'b00 && (afe_cnt < 32)) begin	// 通道+AD片
-						o_sdoa_valid	<=	1;
-						o_sdoa <= sdoa[15:0];
-					end
-					else begin
-						o_sdoa_valid	<=	0;
-						o_sdoa <= 0;
-					end
-					
-					//if ((sdob_cnt != sdob[17:16]) && (afe_cnt < 32)) begin
-					if ((sdoa[17:16]) == 2'b01 && (afe_cnt < 32)) begin	// 通道+AD片
-						o_sdob_valid	<=	1;
-						o_sdob <= sdob[15:0];
-					end
-					else begin
-						o_sdob_valid	<=	0;
-						o_sdob <= 0;
-					end					
-				end
-				else begin
-					o_sdoa_valid	<=	o_sdoa_valid;
-					o_sdoa <= o_sdoa;
-					o_sdob_valid	<=	o_sdob_valid;
-					o_sdob <= o_sdob;						
-				end
-				// sdi_over			
+		
 				if (!o_csn_d && o_csn)
 					sdi_over<=	1;
 				else
 					sdi_over<=	0;
-			end
+			end					
 			//---default---
 			default : begin
 				o_rd		<=	1'b0;
 				o_convst	<=	1'b0;
 				time_cnt	<=	0;
-				o_sdoa_valid<=	0;
-				o_sdoa 		<=  0;
-				o_sdob_valid<=	0;
-				o_sdob 		<=  0;
-				sdi_over	<=	0;	
-				sdoa		<=	0;
-				sdob		<=	0;
-				sdoa_cnt	<=	0;
-				sdob_cnt	<= 	0;					
+				sdi_over	<=	0;			
 			end
 		endcase
 	end
 end
+//---------------------- SDO -------------------------------
+always @(negedge CLK_ADS or posedge CLK_RST) begin
+	if (CLK_RST) begin
+		o_sdoa_valid<=	0;
+		o_sdoa 		<=  0;
+		o_sdob_valid<=	0;
+		o_sdob 		<=  0;
+		sdoa		<=	0;
+		sdob		<=	0;
+	end
+	else begin
+		case (current_state)
+			IDLE : begin
+					o_sdoa_valid	<=	0;
+					o_sdoa <= 0;
+					o_sdob_valid	<=	0;
+					o_sdob <= 0;				
+			end
+			SDIO : begin
+
+				// ADS_SDO
+				case (clk_cnt)
+					8'd00,8'd01 : begin 
+									o_sdoa_valid	<=	0;
+									o_sdoa <= 0;
+									o_sdob_valid	<=	0;
+									o_sdob <= 0;					
+					end
+					8'd02,8'd03,8'd04,8'd05,8'd06,8'd07,8'd08,8'd09,8'd10,
+					8'd11,8'd12,8'd13,8'd14,8'd15,8'd16,8'd17,8'd18,8'd19: 
+							begin 
+								if (o_init && ADS_BUSY) begin
+									sdoa[19-clk_cnt] <= ADS_SDOA;
+									sdob[19-clk_cnt] <= ADS_SDOB;
+								end
+								else begin
+									sdoa <= sdoa;
+									sdob <= sdob;
+								end
+							end	
+					8'd20 : begin 
+								if (o_init && (afe_cnt < 34) && (afe_cnt > 1)) begin
+									o_sdoa_valid	<=	1;
+									o_sdoa <= sdoa[15:0];
+									o_sdob_valid	<=	1;
+									o_sdob <= sdob[15:0];
+								end
+								else begin
+									o_sdoa_valid	<=	0;
+									o_sdoa <= 0;
+									o_sdob_valid	<=	0;
+									o_sdob <= 0;						
+								end				
+					end			
+					default:begin 
+									o_sdoa_valid	<=	0;
+									o_sdoa <= 0;
+									o_sdob_valid	<=	0;
+									o_sdob <= 0;					
+					end
+				endcase
+			end
+		endcase
+	end
+end
+//---------------------- SDI -------------------------------
 always @(posedge CLK_ADS or posedge CLK_RST) begin
 	if (CLK_RST) begin
 		o_init	<=	0;
@@ -280,7 +283,7 @@ always @(posedge CLK_ADS or posedge CLK_RST) begin
 		case (current_state)
 			SDIO : begin
 				// ADS_CS_N
-				if (clk_cnt < T_CS) begin 
+				if (clk_cnt < T_CS) begin 		// if (ADS_BUSY)  
 					clk_cnt <= clk_cnt + 1;
 					o_csn	<=	0;
 				end
@@ -297,7 +300,7 @@ always @(posedge CLK_ADS or posedge CLK_RST) begin
 					8'd00 : begin o_sdi <= 0;sdi_cmdr <= sdi_cmd; end
 					8'd01,8'd02,8'd03,8'd04,8'd05,8'd06,8'd07,8'd08,
 					8'd09,8'd10,8'd11,8'd12,8'd13,8'd14,8'd15,8'd16: 
-							begin o_sdi <= sdi_cmdr[15]; sdi_cmdr <= sdi_cmdr << 1; end
+							begin o_sdi <= sdi_cmdr[16-clk_cnt]; end		// o_sdi <= sdi_cmdr[15]; sdi_cmdr <= sdi_cmdr << 1;
 					default:begin o_sdi <= 0;end
 				endcase
 			end
@@ -315,14 +318,14 @@ always @(*) begin
 			IDLE : begin
 				if (!o_init)
 					next_state = CMDS;
-				else if (!CLK_AFE_D && CLK_AFE && o_init && (afe_cnt < 32))	// normal mode
+				else if (!CLK_AFE_D && CLK_AFE && (afe_cnt < 34) && !AFE_EOC)	// normal mode
 					next_state = CMDS;
 				else
 					next_state = IDLE;
 			end
 			//---ST1---
 			CMDS : begin
-					next_state = SDIO;			
+					next_state = SDIO;		// 是否带通道信息	2选一	
 			end
 			//---ST2---
 			SDIO : begin
@@ -332,7 +335,7 @@ always @(*) begin
 					next_state = IDLE;
 				else
 					next_state = SDIO;			
-			end		
+			end				
 			//---default---
 			default : begin
 				next_state = IDLE;

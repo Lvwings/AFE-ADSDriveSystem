@@ -36,7 +36,7 @@ module AFE_CTL(
     output AFE_ENTRI,	//High on this pin enables tri-state of analog output drivers after shift out of data for all 64 channels 
 	output AFE_STI,
 	input  AFE_STO,
-	input  AFE_EOC,
+
 	//-- mode ports --
 	output AFE_SMT_MD,	// read mode set
 	output AFE_INPUTZ,
@@ -45,8 +45,9 @@ module AFE_CTL(
 	//-- PGA set --	
 	output [2:0] AFE_PGA
     );
-//---output registers---
-reg	o_clk	=	1'b0,
+	
+//---output registers-------------------------------------------------
+(* KEEP = "TRUE" *)reg	o_clk	=	1'b0,
 	o_intg	=	1'b0,
 	o_shr	=	1'b0,
 	o_irst	=	1'b0,
@@ -67,7 +68,7 @@ assign	AFE_SHR		=	o_shr;
 assign	AFE_IRST	=	o_irst;	
 assign	AFE_SHS		=	o_shs;	
 assign	AFE_STI		=	o_sti;
-assign	AFE_DF_SM	=	o_dfsm;	
+assign	AFE_DF_SM	=	1'b1;	// o_dfsm
 //---state parameters---
 parameter	IDLE		=	4'd0,
 			IRST_STI	=	4'd1,
@@ -78,21 +79,21 @@ parameter	IDLE		=	4'd0,
 reg [3:0]	current_state = 0,
 			next_state	=	0;			
 //---time parameters---
-parameter	T_SXX		=	12'd5,		// 	50 ns
-			T_IRST		=	12'd10,		// 	100 ns
+parameter	T_SXX		=	12'd50,			// 	50 ns		//  5
+			T_IRST		=	12'd100,		// 	100 ns		//	10
 			T_HALF_CLK	=	12'd65,		//	650 ns	AFE_CLK = 0.769MHz -> 1300 ns
-			T_WAIT_INTG	=	12'd10,		//	100 ns  wait for INTG
+			T_WAIT_INTG	=	12'd100,		//	100 ns  wait for INTG	// 10
 			T_TFT		=	12'd1400,	//  14	us  TFT_ON to set AFE_DF_SM
 			T_INTG		=	12'd1450,	//	14.5 us	14us TFT_ON + 0.5us delay
 			T_WAIT_SHS	=	12'd500,	//  5 us 	wait for SHS
 			T_END		=	12'd10;		//	100 ns	rising SHS to next rising IRST 
 reg [11:0] time_cnt		=	0;			
 //---other registers---
-parameter	HALF_CLK_NUM	=	65;
+parameter	HALF_CLK_NUM	=	67;		// 65
 reg [7:0] 	clk_cnt	=	0;	// cnt for CLK_AFE
 reg			sjump	=	1'b0;
 
-//---state jump---
+//---state jump-----------------------------------------------------------------
 always @(posedge CLK_100M or posedge CLK_RST) begin
 	if (CLK_RST)
 		current_state <= IDLE;
@@ -107,6 +108,7 @@ always @(posedge CLK_100M or posedge CLK_RST) begin
 		sjump		<=	0;
 	end
 	else begin
+			
 		case (next_state)
 			//---ST0---
 			IDLE : begin
@@ -176,7 +178,7 @@ always @(posedge CLK_100M or posedge CLK_RST) begin
 					sjump	 <= 1;
 				end
 				// SHR
-				if (time_cnt < T_SXX) 
+				if (time_cnt < T_SXX) 		// T_SXX	test
 					o_shr <= 1;
 				else
 					o_shr <= 0;				

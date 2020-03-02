@@ -14,7 +14,7 @@ this file indicates the pin correspondence between FPGA and board.
 | 9                    | PGA-2          | AFE_PGA[2]       | N23       | 24                   | NAPZ           | AFE_NAPZ         | D24       |
 | 10                   | ENTRI          | AFE_ENTRI        | M24       | 25                   | CLK            | AFE_CLK          | E25       |
 | 11                   | PDZ            | AFE_PDZ          | N25       | 26                   | SHS            | AFE_SHS          | J25       |
-| 12                   | DF-SM          | AFE_SMT_MD       | R25       | 27                   | INTG           | AFE_INTG         | H26       |
+| 12                   | DF-SM          | AFE_DF_SM        | R25       | 27                   | INTG           | AFE_INTG         | H26       |
 | 13                   | SHR            | AFE_SHR          | P24       |                      |                |                  |           |
 | 14                   | IRST           | AFE_IRST         | T24       |                      |                |                  |           |
 | 15                   | EOC            | AFE_EOC          | U23       |                      |                |                  |           |

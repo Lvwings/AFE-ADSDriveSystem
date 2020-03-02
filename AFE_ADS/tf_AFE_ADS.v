@@ -88,7 +88,7 @@ module tf_AFE_ADS;
 		sys_clk = 0;
 		AFE_STO = 0;
 		AFE_EOC = 0;
-		ADS_BUSY = 0;
+		ADS_BUSY = 1;
 		ADS_SDOA = 0;
 		ADS_SDOB = 0;
 
