@@ -28,6 +28,7 @@ module AFE_CTL(
 	//-- control ports --
 	output AFE_CLK,		//0.769 MHz  outputs the analog voltage from each integrator channel on each rising edge
 	output AFE_INTG,	//integrate pixel signal when high
+	output AFE_TFT,
 	output AFE_IRST,	//Resets the AFE on rising edge
 	output AFE_SHS,		//samples signal on rising edge
     output AFE_SHR,		//samples ‘reset’ level of integrator on rising edge  
@@ -49,6 +50,7 @@ module AFE_CTL(
 //---output registers-------------------------------------------------
 (* KEEP = "TRUE" *)reg	o_clk	=	1'b0,
 	o_intg	=	1'b0,
+	o_tft	=	1'b0,
 	o_shr	=	1'b0,
 	o_irst	=	1'b0,
 	o_shs	=	1'b0,
@@ -59,11 +61,12 @@ assign	AFE_PDZ		=	1'b1;
 assign	AFE_NAPZ	=	1'b1;
 assign	AFE_ENTRI	=	1'b1;
 assign	AFE_SMT_MD	=	1'b1;
-assign	AFE_INPUTZ	=	1'b1;
+assign	AFE_INPUTZ	=	1'b0;
 assign	AFE_PGA		=	3'b111;
 
 assign	AFE_CLK 	=	o_clk;
 assign	AFE_INTG	=	o_intg;
+assign	AFE_TFT		=	o_tft;
 assign	AFE_SHR		=	o_shr;	
 assign	AFE_IRST	=	o_irst;	
 assign	AFE_SHS		=	o_shs;	 
@@ -84,7 +87,7 @@ parameter	T_SXX		=	12'd50,			// 	50 ns		//  5
 			T_HALF_CLK	=	12'd65,		//	650 ns	AFE_CLK = 0.769MHz -> 1300 ns
 			T_WAIT_INTG	=	12'd100,		//	100 ns  wait for INTG	// 10
 			T_TFT		=	12'd1400,	//  14	us  TFT_ON to set AFE_DF_SM
-			T_INTG		=	12'd1450,	//	14.5 us	14us TFT_ON + 0.5us delay
+			T_INTG		=	12'd1420,	//	14.5 us	14us TFT_ON + 0.5us delay
 			T_WAIT_SHS	=	12'd500,	//  5 us 	wait for SHS
 			T_END		=	12'd10;		//	100 ns	rising SHS to next rising IRST 
 reg [11:0] time_cnt		=	0;			
@@ -115,6 +118,7 @@ always @(posedge CLK_100M or posedge CLK_RST) begin
 			IDLE : begin
 				o_clk	<=	1'b0;
 				o_intg	<=	1'b0;
+				o_tft	<=	1'b0;
 				o_shr	<=	1'b0;
 				o_irst	<=	1'b0;
 				o_shs	<=	1'b0;
@@ -200,10 +204,14 @@ always @(posedge CLK_100M or posedge CLK_RST) begin
 				else
 					o_intg 	 <= 0;
 				// DF_SM
-				if (time_cnt < T_TFT) 
+				if (time_cnt < T_TFT) begin  
 					o_dfsm	 <= 0;
-				else
-					o_dfsm 	 <= 1;				
+					o_tft    <= 1;
+				end
+				else begin
+					o_dfsm 	 <= 1;
+					o_tft    <= 0;
+				end
 			end
 			//---ST5---
 			SHS : begin
