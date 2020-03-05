@@ -26,7 +26,8 @@ module CLK_GRT(
 //--- output ---
 	output CLK_100M,
 	output CLK_ADS,
-	output CLK_RST		//reset hign valid 
+	output CLK_RST,		//reset hign valid 
+	output SAMPLE_EN
     );
 wire clk_100m_r,clk_ads_r,LOCKED;
 wire sys_rst_r;
@@ -57,4 +58,10 @@ BUFG clk_IBUFG
     // Status and control signals
     .RESET			(~sys_rst_r),	// IN
     .LOCKED			(LOCKED));      // OUT
+	
+CLK_SAMPLE_EN CLK_SAMPLE_EN (
+    .CLK_100M		(CLK_100M), 
+    .CLK_RST		(CLK_RST), 
+    .SAMPLE_EN		(SAMPLE_EN)
+    );	
 endmodule

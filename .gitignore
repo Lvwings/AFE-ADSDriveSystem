@@ -385,3 +385,7 @@ AFE_ADS/work/_lib1_0.qdb
 AFE_ADS/work/_lib1_0.qpg
 AFE_ADS/work/_lib1_0.qtl
 doc/PinCorrespondence.md_001.vswp
+AFE_ADS/CLK_SAMPLE_EN.cmd_log
+AFE_ADS/CLK_SAMPLE_EN.tfi
+AFE_ADS/ipcore_dir/tmp/_cg/_dbg/xil_459.in
+AFE_ADS/ipcore_dir/tmp/_cg/_dbg/xil_459.out

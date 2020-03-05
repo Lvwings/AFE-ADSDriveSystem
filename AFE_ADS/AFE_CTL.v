@@ -23,7 +23,7 @@ module AFE_CTL(
     input CLK_RST,		//reset input, high is valid
     input CLK_100M,		//system clock
 	input ADS_INIT_OK,	
-	
+	input SAMPLE_EN,	// rising edge start one sample
 //--- AFE PORTS ---
 	//-- control ports --
 	output AFE_CLK,		//0.769 MHz  outputs the analog voltage from each integrator channel on each rising edge
@@ -66,9 +66,9 @@ assign	AFE_CLK 	=	o_clk;
 assign	AFE_INTG	=	o_intg;
 assign	AFE_SHR		=	o_shr;	
 assign	AFE_IRST	=	o_irst;	
-assign	AFE_SHS		=	o_shs;	
+assign	AFE_SHS		=	o_shs;	 
 assign	AFE_STI		=	o_sti;
-assign	AFE_DF_SM	=	1'b1;	// o_dfsm
+assign	AFE_DF_SM	=	o_dfsm;	// o_dfsm
 //---state parameters---
 parameter	IDLE		=	4'd0,
 			IRST_STI	=	4'd1,
@@ -92,7 +92,7 @@ reg [11:0] time_cnt		=	0;
 parameter	HALF_CLK_NUM	=	67;		// 65
 reg [7:0] 	clk_cnt	=	0;	// cnt for CLK_AFE
 reg			sjump	=	1'b0;
-
+reg 		sample_en_r = 1'b0;
 //---state jump-----------------------------------------------------------------
 always @(posedge CLK_100M or posedge CLK_RST) begin
 	if (CLK_RST)
@@ -106,9 +106,10 @@ always @(posedge CLK_100M or posedge CLK_RST) begin
 		time_cnt 	<=	0;
 		clk_cnt		<=	0;
 		sjump		<=	0;
+		sample_en_r <=  0;
 	end
 	else begin
-			
+		sample_en_r <= SAMPLE_EN;		
 		case (next_state)
 			//---ST0---
 			IDLE : begin
@@ -244,7 +245,7 @@ always @(*) begin
 		case (current_state)
 			//---ST0---
 			IDLE : begin
-				if (ADS_INIT_OK)
+				if (ADS_INIT_OK && SAMPLE_EN && !sample_en_r)
 					next_state = IRST_STI;
 				else
 					next_state = IDLE;
@@ -280,7 +281,7 @@ always @(*) begin
 			//---ST5---
 			SHS : begin
 				if (sjump)
-					next_state = IRST_STI;
+					next_state = IDLE;
 				else
 					next_state = SHS;			
 			end	

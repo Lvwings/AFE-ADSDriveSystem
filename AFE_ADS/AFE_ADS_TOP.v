@@ -59,6 +59,7 @@ module AFE_ADS_TOP(
 wire CLK_100M,CLK_RST,CLK_ADS;
 wire ADS_INIT_OK;
 wire CLK_AFE;
+wire SAMPLE_EN;
 wire [15:0]	ADS_ADATA,ADS_BDATA;
 wire ADS_AVLAID,ADS_BVLAID;
 
@@ -69,13 +70,15 @@ CLK_GRT CLK_GRT (
     .sys_clk(sys_clk), 
     .CLK_100M(CLK_100M), 
     .CLK_ADS(CLK_ADS), 
-    .CLK_RST(CLK_RST)
+    .CLK_RST(CLK_RST),
+	.SAMPLE_EN(SAMPLE_EN)
     );
 
 AFE_CTL AFE_CTL (
     .CLK_RST(CLK_RST), 
     .CLK_100M(CLK_100M), 
-    .ADS_INIT_OK(ADS_INIT_OK), 
+    .ADS_INIT_OK(ADS_INIT_OK),
+	.SAMPLE_EN(SAMPLE_EN),
     .AFE_CLK(CLK_AFE), 
     .AFE_INTG(AFE_INTG), 
     .AFE_IRST(AFE_IRST), 
