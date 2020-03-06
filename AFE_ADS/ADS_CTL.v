@@ -78,7 +78,7 @@ parameter	IDLE		=	4'd0,
 reg [3:0]	current_state = 0,
 			next_state	=	0;	
 //---time parameters---
-parameter	T_RD		=	8'd20,		// 	< 50 ns  // 4
+parameter	T_RD		=	8'd4,		// 	< 50 ns  // 4
 			T_CS		=	8'd20;		// 	20 CLK_ADS
 reg [7:0] time_cnt		=	0,
 		  clk_cnt		=	0,
@@ -318,7 +318,7 @@ always @(*) begin
 			IDLE : begin
 				if (!o_init)
 					next_state = CMDS;
-				else if (!CLK_AFE_D && CLK_AFE && (afe_cnt < 34) && !AFE_EOC)	// normal mode
+				else if (CLK_AFE_D && !CLK_AFE && (afe_cnt < 34) && !AFE_EOC)	// normal mode
 					next_state = CMDS;
 				else
 					next_state = IDLE;

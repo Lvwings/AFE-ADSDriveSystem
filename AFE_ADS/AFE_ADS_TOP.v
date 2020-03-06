@@ -27,6 +27,7 @@ module AFE_ADS_TOP(
 	//-- control ports --
 	output AFE_CLK,		//outputs the analog voltage from each integrator channel on each rising edge
 	output AFE_INTG,	//integrate pixel signal when high
+	output AFE_TFT,
 	output AFE_IRST,	//Resets the AFE on rising edge
 	output AFE_SHS,		//samples signal on rising edge
     output AFE_SHR,		//samples ‘reset’ level of integrator on rising edge  
@@ -80,7 +81,8 @@ AFE_CTL AFE_CTL (
     .ADS_INIT_OK(ADS_INIT_OK),
 	.SAMPLE_EN(SAMPLE_EN),
     .AFE_CLK(CLK_AFE), 
-    .AFE_INTG(AFE_INTG), 
+    .AFE_INTG(AFE_INTG),
+	.AFE_TFT(AFE_TFT),
     .AFE_IRST(AFE_IRST), 
     .AFE_SHS(AFE_SHS), 
     .AFE_SHR(AFE_SHR), 
